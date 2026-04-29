@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>Бухгалтерский тренажер | Отражаем выручку со скидкой</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #eef2f5;
+      font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, 'Roboto', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .trainer {
+      max-width: 1400px;
+      width: 100%;
+      background: white;
+      border-radius: 2rem;
+      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.01);
+      padding: 2rem 1.8rem 2.2rem;
+    }
+
+    .header-with-hint {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .title {
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #1a2c3e;
+    }
+
+    .task-brief {
+      background: #f9fafc;
+      border-radius: 1.2rem;
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 2rem;
+      border: 1px solid #eef2f8;
+    }
+
+    .task-brief p {
+      margin: 0.4rem 0;
+      font-size: 0.95rem;
+      color: #1f3a4b;
+    }
+
+    .hint-bulb {
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    .hint-bulb:hover { transform: scale(1.05); }
+
+    .bulb-icon {
+      width: 48px;
+      height: 48px;
+      background: #ffc107;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .bulb-icon svg { width: 28px; height: 28px; fill: #fff; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: white;
+      border-radius: 2rem;
+      max-width: 95%;
+      width: 1200px;
+      max-height: 85vh;
+      overflow: auto;
+      padding: 1.5rem;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.2rem;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 0.8rem;
+    }
+    .close-modal {
+      background: none;
+      border: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: #6c7f8f;
+    }
+    .hint-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    .hint-table th, .hint-table td {
+      border: 1px solid #d1d9e6;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .hint-table th { background: #f0f6fe; }
+
+    .journal-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 10px;
+      margin: 1rem 0;
+    }
+    .journal-table th {
+      text-align: left;
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #6c7f8f;
+      padding-bottom: 6px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .journal-table td {
+      padding: 8px 8px 8px 0;
+      vertical-align: middle;
+      font-size: 0.8rem;
+      font-weight: 400;
+    }
+    .entry-desc {
+      font-weight: 400;
+      color: #1f3e4c;
+      font-size: 0.8rem;
+    }
+    .account-select {
+      width: 100%;
+      min-width: 150px;
+      padding: 8px 10px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      font-weight: 400;
+      background: white;
+      border: 1.5px solid #95CAFA;
+      border-radius: 14px;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%235f7f9e' stroke-width='2'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+    .sum-display {
+      font-family: 'Segoe UI', 'Inter', sans-serif;
+      font-size: 0.8rem;
+      font-weight: 400;
+      background: #f8fafc;
+      padding: 6px 10px;
+      border-radius: 14px;
+      border: 1px solid #e2e8f0;
+      display: inline-block;
+      min-width: 130px;
+      text-align: right;
+      color: #1f3a4b;
+    }
+    .calc-hint {
+      font-size: 0.65rem;
+      color: #7a8ea0;
+      margin-top: 3px;
+    }
+    .account-select.valid-green { background-color: #e1f7e8; border-color: #2b8c5e; }
+    .account-select.invalid-red { background-color: #ffe6e5; border-color: #d9534f; }
+    .check-btn {
+      background: white;
+      border: 1.5px solid #95CAFA;
+      padding: 10px 24px;
+      border-radius: 40px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: #2c577c;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    .check-btn:hover { background: #f1f7fe; }
+    .status-message {
+      margin-top: 1rem;
+      font-size: 0.8rem;
+      min-height: 2rem;
+    }
+    footer {
+      font-size: 0.65rem;
+      text-align: center;
+      margin-top: 2rem;
+      color: #9bb1c2;
+      border-top: 1px solid #eef2f8;
+      padding-top: 1rem;
+    }
+    @media (max-width: 1000px) {
+      .account-select { min-width: 120px; font-size: 0.7rem; }
+      .sum-display { font-size: 0.7rem; min-width: 100px; }
+      .entry-desc { font-size: 0.7rem; }
+    }
+  </style>
+</head>
+<body>
+<div class="trainer">
+  <div class="header-with-hint">
+    <div class="title">Отражаем выручку со скидкой</div>
+    <div class="hint-bulb" id="hintBulb">
+      <div class="bulb-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7zM9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1z"/></svg></div>
+    </div>
+  </div>
+
+  <div class="task-brief">
+    <p><strong></strong> Ваша компания заключила договор с условием, что предоставит скидку 10%, если покупатель купит продукции более 200 единиц, и 15% — если более 250. Стоимость одной единицы продукции — 18 300 руб. (в том числе НДС 3 300 руб.). Вы проанализировали договоры и сделали вывод, что скидку этому покупателю в размере 10% вы предоставляли в девяти случаях из десяти, а 15% — в одном случае. Вы посчитали, что наиболее вероятное значение скидки — 10%. Продукцию отгрузили следующими партиями: 100, 110 и 40 единиц.</p>
+  </div>
+
+  <table class="journal-table">
+    <thead><tr><th>Содержание операции</th><th>Дебет</th><th>Кредит</th><th>Сумма, руб.</th></tr></thead>
+    <tbody>
+      <tr><td class="entry-desc">Признали выручку по первой партии</td>
+        <td><select class="account-select" id="d1"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><select class="account-select" id="c1"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><div class="sum-display">1 647 000</div><div class="calc-hint">100 × 18 300 × 90%</div></td>
+      </tr>
+      <tr><td class="entry-desc">Отразили оценочное обязательство по скидке</td>
+        <td><select class="account-select" id="d2"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><select class="account-select" id="c2"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><div class="sum-display">183 000</div><div class="calc-hint">100 × 18 300 × 10%</div></td>
+      </tr>
+      <tr><td class="entry-desc">Начислили НДС</td>
+        <td><select class="account-select" id="d3"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><select class="account-select" id="c3"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><div class="sum-display">330 000</div><div class="calc-hint">100 × 3 300</div></td>
+      </tr>
+      <tr><td class="entry-desc">Признали выручку по второй партии</td>
+        <td><select class="account-select" id="d4"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><select class="account-select" id="c4"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><div class="sum-display">1 811 700</div><div class="calc-hint">110 × 18 300 × 90%</div></td>
+      </tr>
+      <tr><td class="entry-desc">Отразили исполнение оценочного обязательства по скидке на продукцию, которую продали ранее</td>
+        <td><select class="account-select" id="d5"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><select class="account-select" id="c5"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><div class="sum-display">183 000</div><div class="calc-hint">оценочное обязательство по первой партии</div></td>
+      </tr>
+      <tr><td class="entry-desc">Начислили НДС</td>
+        <td><select class="account-select" id="d6"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><select class="account-select" id="c6"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><div class="sum-display">326 700</div><div class="calc-hint">110 × 3 300 × 90%</div></td>
+      </tr>
+      <tr><td class="entry-desc">Сторнировали НДС, который начислили по первой партии</td>
+        <td><select class="account-select" id="d7"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><select class="account-select" id="c7"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><div class="sum-display" style="color:#d9534f;">(33 000)</div><div class="calc-hint">сторно (330 000 - 330 000×90%)</div></td>
+      </tr>
+      <tr><td class="entry-desc">Признали выручку по третьей партии</td>
+        <td><select class="account-select" id="d8"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><select class="account-select" id="c8"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><div class="sum-display">622 200</div><div class="calc-hint">40 × 18 300 × 85%</div></td>
+      </tr>
+      <tr><td class="entry-desc">Начислили НДС</td>
+        <td><select class="account-select" id="d9"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><select class="account-select" id="c9"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><div class="sum-display">112 200</div><div class="calc-hint">40 × 3 300 × 85%</div></td>
+      </tr>
+      <tr><td class="entry-desc">Сторнировали выручку по продукции, которую ранее продали</td>
+        <td><select class="account-select" id="d10"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><select class="account-select" id="c10"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><div class="sum-display" style="color:#d9534f;">(192 150)</div><div class="calc-hint">(1 647 000+1 811 700) - (210×18 300×85%)</div></td>
+      </tr>
+      <tr><td class="entry-desc">Сторнировали НДС по первой и второй партии</td>
+        <td><select class="account-select" id="d11"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><select class="account-select" id="c11"><option value="" disabled selected>—</option><option value="62">62</option><option value="90-1">90-1</option><option value="96">96</option><option value="90-3">90-3</option><option value="68">68</option></select></td>
+        <td><div class="sum-display" style="color:#d9534f;">(34 650)</div><div class="calc-hint">(330 000+326 700-33 000) - (210×3 300×85%)</div></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div><button class="check-btn" id="checkBtn">Проверить</button></div>
+  <div class="status-message" id="statusMsg"></div>
+  <footer>Выберите корреспонденцию счетов для каждой операции. Суммы зафиксированы. Верные ответы подсветятся зелёным.</footer>
+</div>
+
+<!-- Модалка с правильными ответами -->
+<div id="hintModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Правильные ответы</h3>
+      <button class="close-modal" id="closeModalBtn">&times;</button>
+    </div>
+    <table class="hint-table">
+      <thead><tr><th>Операция</th><th>Дебет</th><th>Кредит</th><th>Сумма</th></tr></thead>
+      <tbody>
+        <tr><td>Признали выручку по первой партии</td><td>62</td><td>90-1</td><td>1 647 000</td></tr>
+        <tr><td>Отразили оценочное обязательство по скидке</td><td>62</td><td>96</td><td>183 000</td></tr>
+        <tr><td>Начислили НДС</td><td>90-3</td><td>68</td><td>330 000</td></tr>
+        <tr><td>Признали выручку по второй партии</td><td>62</td><td>90-1</td><td>1 811 700</td></tr>
+        <tr><td>Отразили исполнение оценочного обязательства</td><td>96</td><td>62</td><td>183 000</td></tr>
+        <tr><td>Начислили НДС</td><td>90-3</td><td>68</td><td>326 700</td></tr>
+        <tr><td>Сторнировали НДС по первой партии</td><td>90-3</td><td>68</td><td>(33 000)</td></tr>
+        <tr><td>Признали выручку по третьей партии</td><td>62</td><td>90-1</td><td>622 200</td></tr>
+        <tr><td>Начислили НДС</td><td>90-3</td><td>68</td><td>112 200</td></tr>
+        <tr><td>Сторнировали выручку по ранее проданной продукции</td><td>62</td><td>90-1</td><td>(192 150)</td></tr>
+        <tr><td>Сторнировали НДС по первой и второй партии</td><td>90-3</td><td>68</td><td>(34 650)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const correct = {
+    d1: "62", c1: "90-1",
+    d2: "62", c2: "96",
+    d3: "90-3", c3: "68",
+    d4: "62", c4: "90-1",
+    d5: "96", c5: "62",
+    d6: "90-3", c6: "68",
+    d7: "90-3", c7: "68",
+    d8: "62", c8: "90-1",
+    d9: "90-3", c9: "68",
+    d10: "62", c10: "90-1",
+    d11: "90-3", c11: "68"
+  };
+
+  function checkAll() {
+    let allOk = true;
+    for (let i = 1; i <= 11; i++) {
+      const d = document.getElementById(`d${i}`);
+      const c = document.getElementById(`c${i}`);
+      const correctD = correct[`d${i}`];
+      const correctC = correct[`c${i}`];
+      
+      if (d.value === correctD) { d.classList.add('valid-green'); d.classList.remove('invalid-red'); } 
+      else { d.classList.add('invalid-red'); d.classList.remove('valid-green'); allOk = false; }
+      
+      if (c.value === correctC) { c.classList.add('valid-green'); c.classList.remove('invalid-red'); } 
+      else { c.classList.add('invalid-red'); c.classList.remove('valid-green'); allOk = false; }
+    }
+    const msg = document.getElementById('statusMsg');
+    if (allOk) {
+      msg.innerHTML = "✅ Все проводки верны. Отлично.";
+      msg.style.color = "#2b8c5e";
+    } else {
+      msg.innerHTML = "❌ Есть ошибки в выборе счетов. Красным выделены неверные ячейки.";
+      msg.style.color = "#c05a4a";
+    }
+  }
+
+  document.getElementById('checkBtn').addEventListener('click', checkAll);
+
+  for (let i = 1; i <= 11; i++) {
+    const d = document.getElementById(`d${i}`);
+    const c = document.getElementById(`c${i}`);
+    if (d) d.addEventListener('change', () => { d.classList.remove('valid-green','invalid-red'); document.getElementById('statusMsg').innerHTML = "Нажмите «Проверить» для оценки."; });
+    if (c) c.addEventListener('change', () => { c.classList.remove('valid-green','invalid-red'); document.getElementById('statusMsg').innerHTML = "Нажмите «Проверить» для оценки."; });
+  }
+
+  const modal = document.getElementById('hintModal');
+  const bulb = document.getElementById('hintBulb');
+  const close = document.getElementById('closeModalBtn');
+  bulb.onclick = () => modal.classList.add('active');
+  close.onclick = () => modal.classList.remove('active');
+  modal.onclick = (e) => { if (e.target === modal) modal.classList.remove('active'); };
+</script>
+</body>
+</html>
